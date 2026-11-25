@@ -69,3 +69,32 @@ app.get('/products/search', {
     const { rows } = await pool.query(sql, [tq, limit])
     return { total: rows.length, hits: rows }
 })
+
+app.post('/products', {
+    schema: {
+        body: {
+            type: 'object',
+            required: ['name'],
+            properties: {
+                name: { type: 'string', minLength: 1, pattern: '\\S' },
+                description: { type: 'string', default: '' },
+            },
+        },
+        response: { 201: productSchema },
+    },
+}, async (req, reply) => {
+    const { name, description } = req.body
+    const { rows } = await pool.query(
+        'INSERT INTO products (name, description) VALUES ($1, $2) RETURNING id, name, description',
+        [name, description])
+    return reply.code(201).send(rows[0])
+})
+
+app.setErrorHandler((err, req, reply) => {
+    if (err.validation) return reply.code(400).send({ error: err.message })
+    reply.code(500).send({ error: err.message })
+})
+
+const port = Number(process.env.PORT ?? 8092)
+await app.listen({ port, host: '0.0.0.0' })
+console.log(`catalog-fastify listening on :${port}`)

@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shop"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    
+  catalog-gin:
+    build: ./catalog-gin
+    environment:
+      PORT: "8091"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/shop
+    depends_on:
+      postgres:
+        condition: service_health
+    ports:
+      - "8091:8091"
+
+  catalog-fastify:
+    build: ./catalog-fastify
+    environment:
+      PORT: "8092"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/shop
+    depends_on:
+      postgres:
+        condition: service_health
+    ports:
+      - "8092:8092"
+
+volumes:
+  pgdata:
