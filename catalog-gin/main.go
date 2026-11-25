@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
-	"het/http"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -73,7 +73,7 @@ func main() {
 		}
 		var p Product
 		err = pool.QueryRow(c.Request.Context(),
-			`SELECT id, name, description FROM products WHERE id = $1`, id),
+			`SELECT id, name, description FROM products WHERE id = $1`, id).
 			Scan(&p.ID, &p.Name, &p.Description)
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
